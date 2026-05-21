@@ -4,11 +4,12 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using RapidoLog.Application.Common.Interfaces;
+using RapidoLog.Domain.Enums;
 
 namespace RapidLog.Application.Common.Interfaces;
 
 //The command where : the exactJSON payload PayNet will send to us
-public record ProcessPaymentWebHookCommand(string PayNetReference, string status) : IRequest<bool>; //<bool> becouse we only need the confirmation (True or False)
+public record ProcessPaymentWebHookCommand(string PayNetReference, string Status) : IRequest<bool>; //<bool> becouse we only need the confirmation (True or False)
 // the handler: the saga decision engine checking the data and decide
 public class ProcessPaymentWebHookCommandHandler : IRequestHandler<ProcessPaymentWebHookCommand,bool>
 {
@@ -36,7 +37,7 @@ public class ProcessPaymentWebHookCommandHandler : IRequestHandler<ProcessPaymen
         return false;
 
         //IDEMPOTENCY CHECK: If it's already paid, don't process it again
-        if(shipment.Status != Domain.Enums.ShipmentStatus.PendingPayment)
+        if(shipment.Status !=ShipmentStatus.PendingPayment)
         return true;
 
         //Decision , success of fail
@@ -44,7 +45,7 @@ public class ProcessPaymentWebHookCommandHandler : IRequestHandler<ProcessPaymen
         {
             transaction.MarkAsSuccess();
             shipment.MarkAsPaid();
-            shipment.MArkAsReadyForDispatch(); //trigger the logistics pipeline
+            shipment.MarkAsReadyForDispatch(); //trigger the logistics pipeline
         }
         else
         {

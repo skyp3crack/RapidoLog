@@ -3,7 +3,15 @@ using System.Threading.Tasks;
 
 namespace RapidoLog.Application.Common.Interfaces;
 
-public interfaces IpayNetService
+// 1. A highly safe standard class for the response
+public class PayNetLinkResponse
 {
-    Task<(string PaymentUrl, string ReferenceId)> GeneratePaymentLinkAsync(Guid shipmentId, decimal amount);
+    public string PaymentUrl { get; set; } = string.Empty;
+    public string ReferenceId { get; set; } = string.Empty;
+}
+
+// 2. The Interface contract
+public interface IPayNetService
+{
+    Task<PayNetLinkResponse> GeneratePaymentLinkAsync(Guid shipmentId, decimal amount);
 }

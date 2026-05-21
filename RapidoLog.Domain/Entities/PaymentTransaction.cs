@@ -10,7 +10,7 @@ public class PaymentTransaction
     public Guid Id { get; private set; }
     public Guid ShipmentId { get; private set; }
     public decimal Amount { get; private set; }
-    public string PayNetReference { get; private set; }
+    public string PayNetReference { get; private set; } =string.Empty;
     public PaymentStatus Status { get; private set; }
 
     private PaymentTransaction(){}
@@ -18,7 +18,7 @@ public class PaymentTransaction
     public PaymentTransaction ( Guid shipmentId, decimal amount, string payNetReference)
     {
 
-        if(amount <=0) throw new ArgumentException("Amount must be greater than zero")
+        if(amount <=0) throw new ArgumentException("Amount must be greater than zero");
 
         Id = Guid.NewGuid();
         ShipmentId = shipmentId;

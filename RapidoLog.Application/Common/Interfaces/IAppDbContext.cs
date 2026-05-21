@@ -10,7 +10,7 @@ namespace RapidoLog.Application.Common.Interfaces; //namespace used for clean ar
 public interface IAppDbContext
 {
     DbSet<Shipment> Shipments {get;} 
-    Dbset<PaymentTransaction> PaymentTransactions {get;}
+    DbSet<PaymentTransaction> PaymentTransactions {get;}
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 
 }

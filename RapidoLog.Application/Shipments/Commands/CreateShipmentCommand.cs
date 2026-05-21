@@ -1,49 +1,41 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using MediatR;
+using RapidoLog.Application.Common.Interfaces;
+using RapidoLog.Domain.Entities;
 
+namespace RapidoLog.Application.Shipments.Commands;
 
+public record CreateShipmentCommand(string Origin, string Destination, Guid TenantId) : IRequest<string>;
 
-namespace RapidoLog.Application.Shipment.Commands;
-
-//data we need from the user
-public record CreateShipmentCommand(string Origin,string Destination, Guid TenantId)
-:IRequest<string>;
-
-//handler
 public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentCommand, string>
 {
-
     private readonly IAppDbContext _context;
-    private readonly IPayNetService _payNetService; // Inject PayNet Service
+    private readonly IPayNetService _payNetService;
 
-//Inject real interfaces, not real database
-public CreateShipmentCommandHandler(IAppDbContext context, IPayNetService payNetService)
-   {
-    _context = context;
-    _payNetService = payNetService;
-   } 
+    public CreateShipmentCommandHandler(IAppDbContext context, IPayNetService payNetService)
+    {
+        _context = context;
+        _payNetService = payNetService;
+    }
 
-   public async Task<string> Handle (CreateShipmentCommand request, CancellationToken cancellationToken)
-   {
-    //Generat a fake tracking number
-     var trackingNumber = $"MY-{Guid.NewGuid().ToString().Substring(0,8).ToUpper()}";
+    public async Task<string> Handle(CreateShipmentCommand request, CancellationToken cancellationToken)
+    {
+        var trackingNumber = $"MY-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
+        var shipment = new Shipment(trackingNumber, request.Origin, request.Destination, request.TenantId);
+        
+        _context.Shipments.Add(shipment);
 
-    //Create the domain entity using the rules
-    var shipment = new Shipment(trackingNumber, request.Origin, request.Destination, request.TenantId);
-    _context.Shipments.Add(shipment); 
+        // Fetch the payment link using our new Response class
+        var payNetResponse = await _payNetService.GeneratePaymentLinkAsync(shipment.Id, 15.00m);
 
-    //Ask paynet for a payment link (cost is hardcoded for now to RM15.00)
-    var payNetResponse = await _payNetService.GeneratePaymentLinkAsync(shipment.Id,15.00m);
+        var transaction = new PaymentTransaction(shipment.Id, 15.00m, payNetResponse.ReferenceId);
+        _context.PaymentTransactions.Add(transaction);
 
-    //Record the payment transaction
-    var transaction = new PaymentTransaction(shipment.Id, 15.00m, payNetResponse.ReferenceId);
-    _context.PaymentTransactions.Add(transaction);
+        await _context.SaveChangesAsync(cancellationToken);
 
-    //Save to database
-    await _context.SaveChangesAsync(cancellationToken);
-
-    return trackingNumber; //return the url to the user so they can pay
-
-
-   }
-
+        // Return the URL
+        return payNetResponse.PaymentUrl;
+    }
 }
-    
