@@ -1,2 +1,6 @@
 <Solution>
+  <Project Path="RapidoLog.Api/RapidoLog.Api.csproj" />
+  <Project Path="RapidoLog.Application/RapidoLog.Application.csproj" />
+  <Project Path="RapidoLog.Domain/RapidoLog.Domain.csproj" />
+  <Project Path="RapidoLog.Infrastructure/RapidoLog.Infrastructure.csproj" />
 </Solution>
