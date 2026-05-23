@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using RapidoLog.Application.Common.Interfaces;
 using RapidoLog.Domain.Enums;
 
-namespace RapidLog.Application.Common.Interfaces;
+namespace RapidoLog.Application.Shipments.Commands;
 
 //The command where : the exactJSON payload PayNet will send to us
 public record ProcessPaymentWebHookCommand(string PayNetReference, string Status) : IRequest<bool>; //<bool> becouse we only need the confirmation (True or False)
