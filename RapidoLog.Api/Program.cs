@@ -1,41 +1,40 @@
+using MediatR;
+using RapidoLog.Application.Shipments.Commands;
+using RapidoLog.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+//  Wire up our Architecture Layers
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddInfrastructure(connectionString!);
+
+//  Scan our Application layer for those Commands we wrote
+builder.Services.AddMediatR(cfg => 
+    cfg.RegisterServicesFromAssembly(typeof(CreateShipmentCommand).Assembly));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
+// The Logistics Client requests a new shipment
+app.MapPost("/api/shipments", async (CreateShipmentCommand command, IMediator mediator) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    var paymentUrl = await mediator.Send(command);  // Send the command to Phase 3's CreateShipmentCommandHandler
 
-app.MapGet("/weatherforecast", () =>
+    return Results.Ok(new 
+    { 
+        Message = "Shipment created successfully. Pending Payment.", 
+        PayNetUrl = paymentUrl 
+    });
+});
+
+//  Bank Negara / PayNet sends us an asynchronous background update (The Webhook)
+app.MapPost("/api/webhooks/paynet", async (ProcessPaymentWebHookCommand command, IMediator mediator) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    var success = await mediator.Send(command);  //  ProcessPaymentWebHookCommandHandler (The Saga)
+    if (success)
+        return Results.Ok(new { Status = "Webhook processed and Saga updated." });
+        
+    return Results.BadRequest(new { Error = "Invalid transaction reference or shipment not found." });
+});
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
