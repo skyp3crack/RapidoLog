@@ -28,7 +28,7 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
         var cleanDestination = $"{structuredAddress.Street}, { structuredAddress.Postcode}, {structuredAddress.City}, {structuredAddress.State}";//ormat the components into an enterprise-standard Malaysian address format.
 
         var trackingNumber = $"MY-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
-        var shipment = new Shipment(trackingNumber, request.Origin, request.Destination, request.TenantId);
+        var shipment = new Shipment(trackingNumber, request.Origin,cleanDestination, request.TenantId);
         
         _context.Shipments.Add(shipment);
 
