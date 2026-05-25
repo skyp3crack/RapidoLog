@@ -13,15 +13,20 @@ public class CreateShipmentCommandHandler : IRequestHandler<CreateShipmentComman
 {
     private readonly IAppDbContext _context;
     private readonly IPayNetService _payNetService;
+    private readonly IAiRoutingService _aiRoutingService;
 
-    public CreateShipmentCommandHandler(IAppDbContext context, IPayNetService payNetService)
+    public CreateShipmentCommandHandler(IAppDbContext context, IPayNetService payNetService, IAiRoutingService aiRoutingService)
     {
         _context = context;
         _payNetService = payNetService;
+        _aiRoutingService = aiRoutingService; //injected AiRoutingService via Constructor
     }
 
     public async Task<string> Handle(CreateShipmentCommand request, CancellationToken cancellationToken)
     {
+        var structuredAddress = await _aiRoutingService.ExtractAddressAsync(request.Destination); //Extract structured address components from AI microservice
+        var cleanDestination = $"{structuredAddress.Street}, { structuredAddress.Postcode}, {structuredAddress.City}, {structuredAddress.State}";//ormat the components into an enterprise-standard Malaysian address format.
+
         var trackingNumber = $"MY-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}";
         var shipment = new Shipment(trackingNumber, request.Origin, request.Destination, request.TenantId);
         
