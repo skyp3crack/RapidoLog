@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options=>options.UseSqlServer(connectionString));//Register database
         services.AddScoped<IAppDbContext>(provider =>provider.GetRequiredService<AppDbContext>());//Bind Interface with actual database context
         services.AddTransient<IPayNetService, PayNetSimulatorService>(); //Bind interface to our simulator
+        services.HttpClient<IAiRoutingService, AiRoutingService>(); //Bind interface to our AI routing service
         return services;
     }
 }
