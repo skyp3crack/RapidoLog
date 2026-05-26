@@ -10,6 +10,8 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![EF Core](https://img.shields.io/badge/EF%20Core-10.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
 ![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-CC2927?style=for-the-badge&logo=microsoftsqlserver&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![SignalR](https://img.shields.io/badge/SignalR-Real--Time-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
 **A resilient, distributed logistics orchestrator integrating simulated PayNet/DuitNow payment gateways and an AI-driven data extraction microservice — engineered for the Malaysian fintech & logistics ecosystem.**
@@ -40,6 +42,9 @@ Client Request → AI Address Extraction → Shipment Creation → Payment Initi
 - 🛡️ **Polly Resilience** — Exponential backoff retry policies for fault-tolerant payment gateway communication
 - 🤖 **AI Microservice** — Google Gemini-powered NLP engine for Malaysian address parsing (Malay/English)
 - 🏦 **Fintech Integration** — Simulated PayNet/DuitNow FPX sandbox for realistic payment lifecycle testing
+- 🐳 **Docker Compose** — Full multi-service containerization (API + AI + SQL Server)
+- 🚦 **Rate Limiting** — Native .NET fixed-window rate limiter for DDoS mitigation (RMiT-aligned)
+- 📡 **Real-Time Streaming** — SignalR hub pushing live shipment status updates to frontend clients
 
 ---
 
@@ -117,8 +122,17 @@ RapidoLog follows **Clean Architecture** principles with strict layer separation
 | **Entity Framework Core**      | 10.0.8    | ORM with code-first migrations & Fluent API      |
 | **MediatR**                    | 14.1.0    | CQRS mediator pipeline for command/query dispatch |
 | **Polly**                      | 8.6.6     | Resilience & transient-fault-handling (retry, circuit breaker) |
+| **SignalR**                    | Built-in  | Real-time WebSocket hub for live shipment tracking |
+| **Rate Limiting**              | Built-in  | Fixed-window rate limiter middleware (DDoS mitigation) |
 | **SQL Server**                 | 2022      | Relational persistence (LocalDB / Express)       |
 | **Microsoft.Extensions.Http**  | 10.0.8    | Typed `HttpClient` factory for microservice calls |
+
+### DevOps & Containerization
+
+| Technology           | Purpose                                              |
+| -------------------- | ---------------------------------------------------- |
+| **Docker**           | Multi-stage build for .NET API + Python AI service   |
+| **Docker Compose**   | Full-stack orchestration (API + AI + SQL Server)     |
 
 ### AI Microservice — Python
 
@@ -154,6 +168,7 @@ RapidoLog is designed with awareness of Malaysia's **Risk Management in Technolo
 | **Resilience & Availability**       | Polly retry policies with exponential backoff (2s → 4s → 8s) for payment gateway calls |
 | **Transaction Integrity**           | Saga pattern with idempotency checks preventing duplicate webhook processing |
 | **Audit Trail Readiness**           | Every `PaymentTransaction` is persisted with a unique `PayNetReference` for reconciliation |
+| **DDoS / Abuse Prevention**         | Fixed-window rate limiting (10 req/60s per endpoint) via native .NET middleware |
 | **Separation of Concerns**          | Clean Architecture enforces strict boundary between business logic and infrastructure |
 
 ### Security & Cryptography Readiness
@@ -176,6 +191,7 @@ RapidoLog is designed with awareness of Malaysia's **Risk Management in Technolo
 | .NET SDK           | 10.0+      | [dotnet.microsoft.com](https://dotnet.microsoft.com)   |
 | Python             | 3.12+      | [python.org](https://www.python.org)                   |
 | SQL Server         | Express+   | [SQL Server Downloads](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) |
+| Docker Desktop     | Latest     | [docker.com](https://www.docker.com/products/docker-desktop/) |
 | Google Gemini Key  | —          | [Google AI Studio](https://aistudio.google.com)        |
 
 ### 1. Clone the Repository
@@ -242,16 +258,25 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 
 > The FastAPI server will be available at `http://127.0.0.1:8000` with interactive docs at `/docs`.
 
+### 🐳 Alternative: Run Everything with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+> This spins up all three services (API on `:5000`, AI on `:8000`, SQL Server on `:1433`) with health checks and volume persistence.
+
 ---
 
 ## 📡 API Endpoints
 
 ### .NET Orchestrator API
 
-| Method | Endpoint                  | Description                                             | Request Body                                                                 |
-| ------ | ------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `POST` | `/api/shipments`          | Create a new shipment & initiate payment                | `{ "origin": "string", "destination": "string", "tenantId": "guid" }`       |
-| `POST` | `/api/webhooks/paynet`    | Receive PayNet/DuitNow async payment webhook            | `{ "payNetReference": "string", "status": "SUCCESS \| FAILED" }`            |
+| Method | Endpoint                       | Description                                             | Request Body                                                                 |
+| ------ | ------------------------------ | ------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `POST` | `/api/shipments`               | Create a new shipment & initiate payment                | `{ "origin": "string", "destination": "string", "tenantId": "guid" }`       |
+| `POST` | `/api/webhooks/paynet`         | Receive PayNet/DuitNow async payment webhook            | `{ "payNetReference": "string", "status": "SUCCESS \| FAILED" }`            |
+| `WS`   | `/hubs/shipment-tracking`      | SignalR WebSocket hub for real-time shipment tracking    | Connect via SignalR client SDK                                               |
 
 ### Python AI Microservice
 
@@ -305,8 +330,13 @@ curl -X POST http://localhost:5000/api/webhooks/paynet \
 
 ```
 RapidoLog/
+├── Dockerfile                        # Multi-stage .NET 10 build (SDK → ASP.NET runtime)
+├── docker-compose.yml                # Full-stack orchestration (API + AI + SQL Server)
+│
 ├── RapidoLog.Api/                    # Presentation Layer — Minimal API endpoints
-│   ├── Program.cs                    # App bootstrap, DI wiring, route mapping
+│   ├── Program.cs                    # App bootstrap, DI wiring, rate limiting, SignalR, routes
+│   ├── Hubs/
+│   │   └── ShipmentTrackingHub.cs    # SignalR hub for real-time shipment status streaming
 │   ├── appsettings.json              # Configuration & connection strings
 │   └── RapidoLog.Api.csproj
 │
@@ -342,6 +372,7 @@ RapidoLog/
 │   └── RapidoLog.Infrastructure.csproj
 │
 ├── RapidoLog.AiService/             # AI Microservice — Python/FastAPI
+│   ├── Dockerfile                    # Python 3.12-slim container image
 │   ├── main.py                       # Gemini-powered Malaysian address parser
 │   ├── requirements.txt              # Python dependencies
 │   └── .env                          # API key configuration (gitignored)
@@ -354,12 +385,14 @@ RapidoLog/
 
 ## 🗺️ Roadmap
 
+- [x] **Docker Compose** — Containerized multi-service deployment (API + AI + SQL Server)
+- [x] **Rate Limiting** — Native .NET fixed-window rate limiter on all endpoints
+- [x] **Real-Time Streaming** — SignalR hub for live shipment status push notifications
 - [ ] **Event Sourcing** — Full event replay capability for shipment state transitions
 - [ ] **Azure Service Bus** — Replace synchronous webhook with async message queues
-- [ ] **Docker Compose** — Containerized multi-service deployment
 - [ ] **OpenTelemetry** — Distributed tracing across .NET and Python services
 - [ ] **Azure Key Vault Integration** — Production-grade HYOK secret management
-- [ ] **Rate Limiting & API Gateway** — YARP or Azure API Management
+- [ ] **API Gateway** — YARP or Azure API Management for edge routing
 - [ ] **Post-Quantum TLS** — ML-KEM transport layer for payment channels
 
 ---
