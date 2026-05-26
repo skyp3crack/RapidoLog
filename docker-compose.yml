@@ -1,0 +1,58 @@
+services:
+  # ── .NET 10 Logistics API ──────────────────────────────────────────
+  rapidolog-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rapidolog-api
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RapidoLogDb;User Id=sa;Password=YourStr0ng!Pass;TrustServerCertificate=True
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+    networks:
+      - rapidolog-network
+
+  # ── Python AI Microservice ─────────────────────────────────────────
+  ai-service:
+    build:
+      context: ./RapidoLog.AiService
+      dockerfile: Dockerfile
+    container_name: rapidolog-ai
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./RapidoLog.AiService/.env
+    networks:
+      - rapidolog-network
+
+  # ── SQL Server 2022 ────────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: rapidolog-sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStr0ng!Pass
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "YourStr0ng!Pass" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rapidolog-network
+
+volumes:
+  sqlserver-data:
+
+networks:
+  rapidolog-network:
+    driver: bridge
