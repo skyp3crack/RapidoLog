@@ -62,3 +62,6 @@ nunit-*.xml
 .vs
 .idea
 *.sw?
+
+# Local config overrides
+appsettings.*.local
