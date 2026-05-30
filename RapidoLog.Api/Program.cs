@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using RapidoLog.Api.Hubs;
 using RapidoLog.Application.Shipments.Commands;
 using RapidoLog.Infrastructure;
+using RapidoLog.Infrastructure.Persistence; 
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,13 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+//this will auto create the database and tables on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 //  Activate Rate Limiting middleware in the pipeline
 app.UseRateLimiter();
