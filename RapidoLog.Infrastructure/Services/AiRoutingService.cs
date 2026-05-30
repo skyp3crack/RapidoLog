@@ -17,7 +17,7 @@ public class AiRoutingService: IAiRoutingService
     {
         var requestBody = new { rawAddress = rawAddress}; 
         var writeOptions = new JsonSerializerOptions { PropertyNamingPolicy = null}; // ensure the request body is sent exactly as it is
-        var response = await _httpClient.PostAsJsonAsync("http://127.0.0.1:8000/api/extract-address", requestBody,writeOptions); //POST and automatically serializes 'requestBody' into JSON format for the request body.
+        var response = await _httpClient.PostAsJsonAsync("http://ai-service:8000/api/extract-address", requestBody,writeOptions); //POST and automatically serializes 'requestBody' into JSON format for the request body.
         response.EnsureSuccessStatusCode(); // throws an exception if the response status code is an error 
         
         var readOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, PropertyNameCaseInsensitive=true}; //(from the Python/LLM API) into standard C# property names.
