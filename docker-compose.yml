@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     container_name: rapidolog-api
     ports:
-      - "5000:8080"
+      - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RapidoLogDb;User Id=sa;Password=YourStr0ng!Pass;TrustServerCertificate=True
