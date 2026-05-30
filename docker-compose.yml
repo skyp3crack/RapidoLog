@@ -9,7 +9,7 @@ services:
       - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RapidoLogDb;User Id=sa;Password=YourStr0ng!Pass;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RapidoLogDb-Docker;User Id=sa;Password=YourStr0ng!Pass;TrustServerCertificate=True
       - AiService__BaseUrl=http://ai-service:8000
     depends_on:
       sqlserver:
@@ -37,7 +37,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: rapidolog-sqlserver
     ports:
-      - "1433:1433"
+      - "14333:1433"
     environment:
       - ACCEPT_EULA=Y
       - MSSQL_SA_PASSWORD=YourStr0ng!Pass
