@@ -9,8 +9,7 @@ using RapidoLog.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 
 //  Wire up our Architecture Layers
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddInfrastructure(connectionString!);
+builder.Services.AddInfrastructure(builder.Configuration);
 
 //  Scan our Application layer for those Commands we wrote
 builder.Services.AddMediatR(cfg => 
