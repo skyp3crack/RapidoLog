@@ -10,6 +10,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=RapidoLogDb;User Id=sa;Password=YourStr0ng!Pass;TrustServerCertificate=True
+      - AiService__BaseUrl=http://ai-service:8000
     depends_on:
       sqlserver:
         condition: service_healthy
