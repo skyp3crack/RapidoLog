@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using MediatR;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using RapidoLog.Api.Hubs;
 using RapidoLog.Application.Shipments.Commands;
 using RapidoLog.Infrastructure;
